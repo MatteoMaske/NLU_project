@@ -1,0 +1,16 @@
+emb_size: 600
+hid_size: 600
+lr: 10
+lr_decay: 0.5
+lr_decay_epoch: 3
+clip: 5
+device: cuda
+emb_dropout: 0.6
+out_dropout: 0.6
+weight_tying: True
+dropout_type: variational
+n_epochs: 50
+patience: 5
+batch_size: 20
+optimizer: sgd
+NT_ASGD: False
