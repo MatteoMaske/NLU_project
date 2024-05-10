@@ -36,8 +36,6 @@ def parse_args():
 
 def main(args):
 
-    clip = args.clip
-
     n_epochs = args.epochs
     runs = args.runs
 
