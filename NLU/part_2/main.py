@@ -6,7 +6,7 @@ from functions import *
 import os
 import torch
 from tqdm import tqdm
-from utils import get_loaders
+from utils import get_loaders, save_model, plot_stats
 import numpy as np
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -22,11 +22,12 @@ def parse_args():
     parser.add_argument('--hid_size', type=int, default=200, help='Hidden size')
     parser.add_argument('--dropout', type=float, default=0.1, help='Dropout')
     parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
-    parser.add_argument('--epochs', type=int, default=100, help='Epochs')
+    parser.add_argument('--epochs', type=int, default=30, help='Epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
     parser.add_argument('--patience', type=int, default=3, help='Patience')
     parser.add_argument('--runs', type=int, default=1, help='Runs')
     parser.add_argument('--clip', type=float, default=5, help='Clip')
+    parser.add_argument('--exp_name', type=str, default='exp2_1', help='Experiment name')
 
     return parser.parse_args()
 
@@ -37,7 +38,7 @@ def main(args):
     runs = args.runs
 
     slot_f1s, intent_acc = [], []
-    for x in tqdm(range(0, runs)):
+    for x in range(0, runs):
 
         train_loader, dev_loader, test_loader, lang = get_loaders()
         model, optimizer, criterion_slots, criterion_intents = get_model(args, lang)
@@ -48,7 +49,8 @@ def main(args):
         sampled_epochs = []
         best_f1 = 0
         
-        for x in range(1,n_epochs):
+        print("Run", x+1, "="*50)
+        for x in tqdm(range(1,n_epochs)):
             loss = train_loop(train_loader, optimizer, criterion_slots,
                             criterion_intents, model)
             if x % 5 == 0:
@@ -58,13 +60,13 @@ def main(args):
                                                             criterion_intents, model, lang)
                 losses_dev.append(np.asarray(loss_dev).mean())
                 f1 = results_dev['total']['f']
-                intent_acc = intent_res['accuracy']
 
                 print("Slot F1", f1)
-                print("Intent Acc", intent_acc)
+                print("Intent Acc", intent_res['accuracy'])
 
                 if f1 > best_f1:
                     best_f1 = f1
+                    save_model(model, optimizer, lang, args.exp_name)
                 else:
                     patience -= 1
                 if patience <= 0: # Early stopping with patient
@@ -79,6 +81,9 @@ def main(args):
     intent_acc = np.asarray(intent_acc)
     print('Slot F1', round(slot_f1s.mean(),3), '+-', round(slot_f1s.std(),3))
     print('Intent Acc', round(intent_acc.mean(), 3), '+-', round(slot_f1s.std(), 3))
+
+    save_model(model, optimizer, lang, args.exp_name)
+    plot_stats(sampled_epochs, losses_train, losses_dev, args.exp_name)
 
 
 if __name__ == "__main__":

@@ -64,12 +64,20 @@ def eval_loop(data, criterion_slots, criterion_intents, model, lang):
                 utterance = tokenizer.convert_ids_to_tokens(utt_ids)
                 to_decode = seq[:length].tolist()
 
+                new_utterance = []
+                new_gt_slots = []
+                new_to_decode = []
+
                 #removing padding token from the gt_slots, ref_slots and utterance
                 for index, slot in enumerate(gt_slots):
-                    if slot == 0: # <PAD> token
-                        utterance.pop(index)
-                        to_decode.pop(index)
-                gt_slots = [x for x in gt_slots if x != 0]
+                    if slot != 'pad':
+                        new_gt_slots.append(slot)
+                        new_utterance.append(utterance[index])
+                        new_to_decode.append(to_decode[index])
+
+                gt_slots = new_gt_slots
+                utterance = new_utterance
+                to_decode = new_to_decode
 
                 ref_slots.append([(utterance[id_el], elem) for id_el, elem in enumerate(gt_slots)])
                 tmp_seq = []
@@ -111,11 +119,11 @@ def get_model(args, lang):
     dropout=args.dropout
 
     config = BertConfig(hidden_dropout_prob=dropout)
-    model = Bert.from_pretrained("bert-base-uncased", config=config, out_int=out_int, out_slot=out_slot, dropout=dropout).to(device)
+    model = Bert.from_pretrained("bert-base-uncased", config=config, out_int=out_int, out_slot=out_slot, dropout=dropout).to(args.device)
     model.apply(init_weights)
     print(model)
 
-    param_group = {'params': [p for n,p in model.named_parameters() if ("slot" in n or "intent" in n)]}
+    param_group = [p for n,p in model.named_parameters() if ("slot" in n or "intent" in n)]
     optimizer = optim.Adam(param_group, lr=lr)
 
     criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)

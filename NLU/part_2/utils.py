@@ -168,8 +168,8 @@ class IntentsAndSlots (data.Dataset):
     
 def prepare_dataset():
 
-    tmp_train_raw = load_data(os.path.join('../dataset','ATIS','train.json'))
-    test_raw = load_data(os.path.join('../dataset','ATIS','test.json'))
+    tmp_train_raw = load_data(os.path.join('NLU/dataset','ATIS','train.json'))
+    test_raw = load_data(os.path.join('NLU/dataset','ATIS','test.json'))
     # print('Train samples:', len(tmp_train_raw))
     # print('Test samples:', len(test_raw))
 
@@ -246,3 +246,32 @@ def collate_fn(data):
     new_item["y_slots"] = y_slots
     new_item["slots_len"] = y_lengths
     return new_item
+
+def save_model(model, optimizer, lang, exp_name):
+    os.makedirs(os.path.join('NLU/results', exp_name), exist_ok=True)
+
+    path = os.path.join('NLU/results', exp_name, 'checkpoint')
+
+    saving_object = {"model": model.state_dict(),
+                 "optimizer": optimizer.state_dict(),
+                 "w2id": "BertTokenizer",
+                 "slot2id": lang.slot2id,
+                 "intent2id": lang.intent2id}
+    torch.save(saving_object, path)
+    print("Saving model in", path)
+
+def plot_stats(losses_train, losses_dev, sampled_epochs, exp_name):
+    import matplotlib.pyplot as plt
+    path=os.path.join('NLU/results', exp_name)
+    plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
+
+    plt.title('Train and Dev Losses')
+    plt.ylabel('Loss')
+    plt.xlabel('Epochs')
+    plt.plot(sampled_epochs, losses_train, label='Train loss')
+    plt.plot(sampled_epochs, losses_dev, label='Dev loss')
+    plt.legend()
+
+    plt.savefig(os.path.join(path, 'losses.png'))
+
+    plt.show()
