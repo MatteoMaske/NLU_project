@@ -48,7 +48,7 @@ class LM_LSTM(nn.Module):
         # emb (batch_size, seq_len, emb_size)
         # drop1 = self.dropout_1(emb)
         drop1 = self.dropout_emb(emb)
-        lstm_out, _  = self.lstm(emb)
+        lstm_out, _  = self.lstm(drop1)
         # lstm_out (batch_size, seq_len, hidden_size)
         # drop2 = self.dropout_2(lstm_out)
         drop2 = self.dropout_out(lstm_out)

@@ -7,8 +7,10 @@ from utils import collate_fn, preprocess_data, sum_weights, save_model, plot_los
 
 from functools import partial
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 from tqdm import tqdm
+
+import torch.optim as optim
+import matplotlib.pyplot as plt
 import copy
 import argparse
 import numpy as np
@@ -21,19 +23,20 @@ def parse_args():
     parser.add_argument("--emb_size", type=int, default=600)
     parser.add_argument("--hid_size", type=int, default=600)
     parser.add_argument("--lr", type=float, default=10)
-    parser.add_argument("--lr_decay", type=float, default=0.5)
+    parser.add_argument("--lr_decay", type=float, default=0.75)
     parser.add_argument("--lr_decay_epoch", type=int, default=3)
     parser.add_argument("--clip", type=int, default=5)
     parser.add_argument("--device", type=str, default='cuda')
-    parser.add_argument("--emb_dropout", type=float, default=0.6)
-    parser.add_argument("--out_dropout", type=float, default=0.6)
+    parser.add_argument("--emb_dropout", type=float, default=0.2)
+    parser.add_argument("--out_dropout", type=float, default=0.5)
     parser.add_argument("--weight_tying", type=bool, default=True)
     parser.add_argument("--dropout_type", type=str, default='variational')
     parser.add_argument("--n_epochs", type=int, default=50)
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--batch_size", type=int, default=20)
     parser.add_argument("--optimizer", type=str, default='sgd')
-    parser.add_argument("--NT_ASGD", type=bool, default=False)
+    parser.add_argument("--NT_ASGD", type=bool, default=True)
+    parser.add_argument("--trigger", type=int, default=3)
 
     return parser.parse_args()
 
@@ -54,6 +57,9 @@ def main():
     # Load the model, the optimizer, and the criterion
     model, optimizer, scheduler, criterion_train, criterion_eval = create_model(args, device, lang)
 
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print("N trainable params", trainable_params)
+    exit()
     losses_train = []
     losses_dev = []
     sampled_epochs = []
@@ -61,36 +67,25 @@ def main():
     best_ppl = math.inf
     best_model = None
     pbar = tqdm(range(1,args.n_epochs))
-    lr_decay = args.lr_decay
-    lr_decay_epoch = args.lr_decay_epoch
 
     #for NT_ASGD
     best_dev_loss = []
-    non_monotonic_trigger = 3
-    #for manual ASGD
+    non_monotonic_trigger = args.trigger
     compute_avg = False
-    iter = 1
-    best_weights = {}
-    weight_sum = {}
-    weight_avg = {}
 
     #If the PPL is too high try to change the learning rate
     for epoch in pbar:
         loss = train_loop(train_loader, optimizer, criterion_train, model, clip)
         sampled_epochs.append(epoch)
         losses_train.append(np.asarray(loss).mean())
+        scheduler.step()
 
         if args.NT_ASGD:
             if compute_avg:
-                weight_sum = sum_weights(model, weight_sum)
-                iter += 1
-
                 tmp = {}
                 for parameter in model.parameters():
                     tmp[parameter] = parameter.data.clone()
-                    weight_avg[parameter] = weight_sum[parameter] / iter
-                    parameter.data = weight_avg[parameter].clone()
-                    print(parameter.data)
+                    parameter.data = optimizer.state[parameter]['ax'].clone()
 
                 ppl_dev, loss_dev = eval_loop(dev_loader, criterion_eval, model)
                 ppl_dev_list.append(ppl_dev)
@@ -107,13 +102,12 @@ def main():
 
                 if len(best_dev_loss)>non_monotonic_trigger and loss_dev > min(best_dev_loss[:-non_monotonic_trigger]):
                     print("\nSwitching optimizer to ASGD")
+                    patience = args.patience
                     compute_avg = True
-                    lr_decay_epoch = 3
+                    lr_decay_epoch = 2
                     lr_decay = 0.5
-                    optimizer.param_groups[0]['lr'] = 1
-
-                    #initialize weights for averaging from next iteration
-                    weight_sum = best_weights
+                    optimizer = optim.ASGD(model.parameters(), lr = 1)
+                    scheduler = optim.lr_scheduler.StepLR(optimizer, lr_decay_epoch, gamma=lr_decay)
 
                 best_dev_loss.append(loss_dev)
         else:
@@ -121,17 +115,11 @@ def main():
             ppl_dev_list.append(ppl_dev)
             losses_dev.append(np.asarray(loss_dev).mean())
 
-        # if (epoch+1) % lr_decay_epoch == 0:
-        #     optimizer.param_groups[0]['lr'] *= lr_decay
-        #     print(optimizer.param_groups[0]['lr'])
-        scheduler.step()
 
         pbar.set_description("PPL: %f" % ppl_dev)
         if  ppl_dev < best_ppl: # the lower, the better
             best_ppl = ppl_dev
             best_model = copy.deepcopy(model).to('cpu')
-            for param in model.parameters():
-                best_weights[param] = param.data.clone()
             patience = args.patience
         else:
             patience -= 1
