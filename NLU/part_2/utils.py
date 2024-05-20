@@ -253,10 +253,10 @@ def save_model(model, optimizer, lang, exp_name):
     path = os.path.join('NLU/results', exp_name, 'checkpoint')
 
     saving_object = {"model": model.state_dict(),
-                 "optimizer": optimizer.state_dict(),
-                 "w2id": "BertTokenizer",
-                 "slot2id": lang.slot2id,
-                 "intent2id": lang.intent2id}
+                    "optimizer": optimizer.state_dict(),
+                    "w2id": "BertTokenizer",
+                    "slot2id": lang.slot2id,
+                    "intent2id": lang.intent2id}
     torch.save(saving_object, path)
     print("Saving model in", path)
 

@@ -1,2 +1,110 @@
-# Add the class of your model only
-# Here is where you define the architecture of your model using pytorch
+import torch
+import torch.nn as nn
+from model import Bert
+from utils import PAD_TOKEN
+import torch.optim as optim
+from transformers import BertConfig, BertTokenizer
+
+from conll import evaluate
+
+def train_loop(data, optimizer, criterion_aspects, model, clip=5):
+    model.train()
+    loss_array = []
+    for sample in data:
+        optimizer.zero_grad() # Zeroing the gradient
+        slots = model(sample['utterances'], sample['att_mask'])
+        loss_slot = criterion_aspects(slots, sample['y_slots'])
+
+        loss_array.append(loss_slot.item())
+        loss_slot.backward() # Compute the gradient, deleting the computational graph
+        # clip the gradient to avoid exploding gradients
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+        optimizer.step() # Update the weights
+    return loss_array
+
+def eval_loop(data, criterion_aspects, model, lang):
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+    model.eval()
+    loss_array = []
+
+    ref_aspects = []
+    hyp_aspects = []
+    #softmax = nn.Softmax(dim=1) # Use Softmax if you need the actual probability
+    with torch.no_grad(): # It used to avoid the creation of computational graph
+        for sample in data:
+            slots = model(sample['utterances'], sample['att_mask'])
+            loss_slot = criterion_aspects(slots, sample['y_aspects'])
+            loss_array.append(loss_slot.item())
+
+            # Slot inference
+            output_slots = torch.argmax(slots, dim=1)
+            for id_seq, seq in enumerate(output_slots):
+                length = sample['slots_len'].tolist()[id_seq]
+                utt_ids = sample['utterance'][id_seq][:length].tolist()
+                gt_ids = sample['y_slots'][id_seq][:length].tolist()
+                gt_aspects = [lang.id2aspect[elem] for elem in gt_ids]
+                utterance = tokenizer.convert_ids_to_tokens(utt_ids)
+                to_decode = seq[:length].tolist()
+
+                new_utterance = []
+                new_gt_aspects = []
+                new_to_decode = []
+
+                #removing padding token from the gt_slots, ref_slots and utterance
+                for index, slot in enumerate(gt_aspects):
+                    if slot != 'pad':
+                        new_gt_aspects.append(slot)
+                        new_utterance.append(utterance[index])
+                        new_to_decode.append(to_decode[index])
+
+                gt_aspects = new_gt_aspects
+                utterance = new_utterance
+                to_decode = new_to_decode
+
+                ref_aspects.append([(utterance[id_el], elem) for id_el, elem in enumerate(gt_aspects)])
+                tmp_seq = []
+                for id_el, elem in enumerate(to_decode):
+                    tmp_seq.append((utterance[id_el], lang.id2aspect[elem]))
+                hyp_aspects.append(tmp_seq)
+    try:
+        results = evaluate(ref_aspects, hyp_aspects)
+    except Exception as ex:
+        # Sometimes the model predicts a class that is not in REF
+        print("Warning:", ex)
+        ref_s = set([x[1] for x in ref_aspects])
+        hyp_s = set([x[1] for x in hyp_aspects])
+        print("Found those slots not in the ground truth", hyp_s.difference(ref_s))
+        print(f"{len(hyp_s.difference(ref_s))} out of {len(hyp_s)}")
+        results = {"total":{"f":0}}
+
+    return results, loss_array
+
+
+def init_weights(mat):
+    for n,m in mat.named_modules():
+        if type(m) in [nn.Linear]:
+            if "slot" in n or "intent" in n:
+                print("Initializing", n)
+                torch.nn.init.uniform_(m.weight, -0.01, 0.01)
+                if m.bias != None:
+                    m.bias.data.fill_(0.01)
+
+def get_model(args, lang):
+
+    lr = args.lr
+
+    out_aspect = len(lang.aspect2id)
+
+    dropout=args.dropout
+
+    config = BertConfig(hidden_dropout_prob=dropout)
+    model = Bert.from_pretrained("bert-base-uncased", config=config, out_aspect=out_aspect, dropout=dropout).to(args.device)
+    model.apply(init_weights)
+    print(model)
+
+    param_group = [p for n,p in model.named_parameters() if "slot" in n]
+    optimizer = optim.Adam(param_group, lr=lr)
+
+    criterion_aspects = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
+
+    return model, optimizer, criterion_aspects
