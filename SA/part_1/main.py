@@ -48,9 +48,9 @@ def main(args):
         losses_dev = []
         sampled_epochs = []
         best_f1 = 0
-        pbar = tqdm(range(1,n_epochs), colour='green')
         
-        print("Run", x+1, "="*50)
+        print("\nRun", x+1, "="*50)
+        pbar = tqdm(range(1,n_epochs), colour='green')
         for x in pbar:
             loss = train_loop(train_loader, optimizer, criterion_aspects, model)
             pbar.set_description(f"Epoch {x} | Loss {np.asarray(loss).mean()}")
@@ -61,7 +61,7 @@ def main(args):
                 losses_dev.append(np.asarray(loss_dev).mean())
                 f1 = results_dev['total']['f']
 
-                print("Aspect F1", f1)
+                pbar.set_description(f"Aspect F1 {f1}")
 
                 if f1 > best_f1:
                     best_f1 = f1

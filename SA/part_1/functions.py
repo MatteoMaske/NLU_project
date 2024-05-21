@@ -12,14 +12,15 @@ def train_loop(data, optimizer, criterion_aspects, model, clip=5):
     loss_array = []
     for sample in data:
         optimizer.zero_grad() # Zeroing the gradient
-        slots = model(sample['utterances'], sample['att_mask'])
-        loss_slot = criterion_aspects(slots, sample['y_slots'])
+        aspects = model(sample['utterances'], sample['att_mask'])
+        loss_aspect = criterion_aspects(aspects, sample['y_aspects'])
 
-        loss_array.append(loss_slot.item())
-        loss_slot.backward() # Compute the gradient, deleting the computational graph
+        loss_array.append(loss_aspect.item())
+        loss_aspect.backward() # Compute the gradient, deleting the computational graph
         # clip the gradient to avoid exploding gradients
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
         optimizer.step() # Update the weights
+    print("Batch done")
     return loss_array
 
 def eval_loop(data, criterion_aspects, model, lang):
@@ -39,7 +40,7 @@ def eval_loop(data, criterion_aspects, model, lang):
             # Slot inference
             output_slots = torch.argmax(slots, dim=1)
             for id_seq, seq in enumerate(output_slots):
-                length = sample['slots_len'].tolist()[id_seq]
+                length = sample['aspects_len'].tolist()[id_seq]
                 utt_ids = sample['utterance'][id_seq][:length].tolist()
                 gt_ids = sample['y_slots'][id_seq][:length].tolist()
                 gt_aspects = [lang.id2aspect[elem] for elem in gt_ids]
@@ -102,7 +103,7 @@ def get_model(args, lang):
     model.apply(init_weights)
     print(model)
 
-    param_group = [p for n,p in model.named_parameters() if "slot" in n]
+    param_group = [p for n,p in model.named_parameters() if "aspect" in n]
     optimizer = optim.Adam(param_group, lr=lr)
 
     criterion_aspects = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
