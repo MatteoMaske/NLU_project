@@ -5,8 +5,6 @@ from utils import PAD_TOKEN
 import torch.optim as optim
 from transformers import BertConfig, BertTokenizer
 
-from conll import evaluate
-
 def train_loop(data, optimizer, criterion_aspects, model, clip=5):
     model.train()
     loss_array = []
@@ -77,9 +75,32 @@ def eval_loop(data, criterion_aspects, model, lang):
         print("Found those slots not in the ground truth", hyp_s.difference(ref_s))
         print(f"{len(hyp_s.difference(ref_s))} out of {len(hyp_s)}")
         results = {"total":{"f":0}}
-
     return results, loss_array
 
+def evaluate(ref_aspects, pred_aspects):
+    assert len(ref_aspects) == len(pred_aspects)
+    n_samples = len(ref_aspects)
+    # number of true positive, gold standard, predicted opinion targets
+    n_tp_aspects, n_gt_aspects, n_pred_aspects = 0, 0, 0
+    for i in range(n_samples):
+        gt_aspects = ref_aspects[i]
+        p_aspects = pred_aspects[i]
+        # hit number
+        n_hit = 0
+        for t in p_aspects:
+            if t in gt_aspects:
+                n_hit += 1
+
+        n_tp_aspects += n_hit
+        n_gt_aspects += len(gt_aspects)
+        n_pred_aspects += len(p_aspects)
+    # add 0.001 for smoothing
+    # calculate precision, recall and f1 for ote task
+    precision = float(n_tp_aspects) / float(n_pred_aspects + 1e-3)
+    recall = float(n_tp_aspects) / float(n_gt_aspects + 1e-3)
+    f1 = 2 * precision * recall / (precision + recall + 1e-3)
+    scores = (precision, recall, f1)
+    return scores
 
 def init_weights(mat):
     for n,m in mat.named_modules():
