@@ -53,19 +53,19 @@ def main(args):
         pbar = tqdm(range(1,n_epochs), colour='green')
         for x in pbar:
             loss = train_loop(train_loader, optimizer, criterion_aspects, model)
-            pbar.set_description(f"Epoch {x} | Loss {np.asarray(loss).mean()}")
-            if x % 5 == 0:
+            pbar.set_description(f"Train loss {np.asarray(loss).mean()}")
+            if x % 2 == 0:
                 sampled_epochs.append(x)
                 losses_train.append(np.asarray(loss).mean())
                 results_dev, loss_dev = eval_loop(dev_loader, criterion_aspects, model, lang)
                 losses_dev.append(np.asarray(loss_dev).mean())
                 f1 = results_dev['total']['f']
 
-                pbar.set_description(f"Aspect F1 {f1}")
+                pbar.set_description(f"Val aspect F1 {f1}")
 
                 if f1 > best_f1:
                     best_f1 = f1
-                    save_model(model, optimizer, lang, args.exp_name)
+                    # save_model(model, optimizer, lang, args.exp_name)
                 else:
                     patience -= 1
                 if patience <= 0: # Early stopping with patient

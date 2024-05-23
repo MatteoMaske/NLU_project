@@ -53,7 +53,7 @@ def main(args):
         for x in tqdm(range(1,n_epochs)):
             loss = train_loop(train_loader, optimizer, criterion_slots,
                             criterion_intents, model)
-            if x % 5 == 0:
+            if x % 2 == 0:
                 sampled_epochs.append(x)
                 losses_train.append(np.asarray(loss).mean())
                 results_dev, intent_res, loss_dev = eval_loop(dev_loader, criterion_slots,
