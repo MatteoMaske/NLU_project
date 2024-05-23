@@ -35,6 +35,7 @@ def preprocess_data(data):
         new_utt, new_aspects = [], []
         for aspect in aspects.split():
             word, aspect = aspect.rsplit("=", 1)
+            aspect = aspect[0]
             new_utt.append(word)
             new_aspects.append(aspect)
         assert len(new_utt) == len(
@@ -53,9 +54,9 @@ def create_split(tmp_train_raw, test_raw):
     )
 
     # Dataset size
-    print("TRAIN size:", len(train_raw))
-    print("DEV size:", len(dev_raw))
-    print("TEST size:", len(test_raw))
+    # print("TRAIN size:", len(train_raw))
+    # print("DEV size:", len(dev_raw))
+    # print("TEST size:", len(test_raw))
     return train_raw, dev_raw
 
 
@@ -179,6 +180,8 @@ def prepare_dataset():
     dev_dataset = Aspects(dev_raw, lang, tokenizer)
     test_dataset = Aspects(test_raw, lang, tokenizer)
 
+    print("Dataset prepared")
+
     return train_dataset, dev_dataset, test_dataset, lang
 
 
@@ -190,6 +193,8 @@ def get_loaders(batch_size=128):
     )
     dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
     test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=collate_fn)
+
+    print("Loaders created")
 
     return train_loader, dev_loader, test_loader, lang
 
@@ -239,21 +244,20 @@ def collate_fn(data):
     return new_item
 
 def save_model(model, optimizer, lang, exp_name):
-    os.makedirs(os.path.join('NLU/results', exp_name), exist_ok=True)
+    os.makedirs(os.path.join('SA/results', exp_name), exist_ok=True)
 
-    path = os.path.join('NLU/results', exp_name, 'checkpoint')
+    path = os.path.join('SA/results', exp_name, 'checkpoint')
 
     saving_object = {"model": model.state_dict(),
                     "optimizer": optimizer.state_dict(),
                     "w2id": "BertTokenizer",
-                    "slot2id": lang.slot2id,
-                    "intent2id": lang.intent2id}
+                    "slot2id": lang.aspect2id}
     torch.save(saving_object, path)
     print("Saving model in", path)
 
-def plot_stats(losses_train, losses_dev, sampled_epochs, exp_name):
+def plot_stats(sampled_epochs, losses_train, losses_dev, exp_name):
     import matplotlib.pyplot as plt
-    path=os.path.join('NLU/results', exp_name)
+    path=os.path.join('SA/results', exp_name)
     plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
 
     plt.title('Train and Dev Losses')

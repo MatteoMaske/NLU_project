@@ -40,7 +40,7 @@ def main(args):
     runs = args.runs
 
     slot_f1s, intent_acc = [], []
-    for x in tqdm(range(0, runs)):
+    for ep in tqdm(range(0, runs)):
 
         train_loader, dev_loader, test_loader, lang = get_loaders()
         model, optimizer, criterion_slots, criterion_intents = get_model(args, lang)
@@ -51,11 +51,11 @@ def main(args):
         sampled_epochs = []
         best_f1 = 0
         
-        for x in range(1,n_epochs):
+        for ep in range(1,n_epochs):
             loss = train_loop(train_loader, optimizer, criterion_slots,
                             criterion_intents, model)
-            if x % 5 == 0:
-                sampled_epochs.append(x)
+            if ep % 5 == 0:
+                sampled_epochs.append(ep)
                 losses_train.append(np.asarray(loss).mean())
                 results_dev, intent_res, loss_dev = eval_loop(dev_loader, criterion_slots,
                                                             criterion_intents, model, lang)

@@ -50,11 +50,11 @@ def main(args):
         best_f1 = 0
         
         print("Run", x+1, "="*50)
-        for x in tqdm(range(1,n_epochs)):
+        for ep in tqdm(range(1,n_epochs)):
             loss = train_loop(train_loader, optimizer, criterion_slots,
                             criterion_intents, model)
-            if x % 2 == 0:
-                sampled_epochs.append(x)
+            if ep % 2 == 0:
+                sampled_epochs.append(ep)
                 losses_train.append(np.asarray(loss).mean())
                 results_dev, intent_res, loss_dev = eval_loop(dev_loader, criterion_slots,
                                                             criterion_intents, model, lang)

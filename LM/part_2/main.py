@@ -59,7 +59,7 @@ def main():
 
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("N trainable params", trainable_params)
-    exit()
+
     losses_train = []
     losses_dev = []
     sampled_epochs = []
