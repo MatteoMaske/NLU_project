@@ -123,9 +123,30 @@ def get_model(args, lang):
     model.apply(init_weights)
     # print(model)
 
-    # param_group = [p for n,p in model.named_parameters() if "aspect" in n]
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    if args.joint_training:
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    else:
+        param_group = [p for n,p in model.named_parameters() if "aspect" in n]
+        optimizer = optim.Adam(param_group, lr=lr)
 
     criterion_aspects = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
+
+    return model, optimizer, criterion_aspects
+
+def get_checkpoint(args, lang):
+    import os
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_dir = os.path.join(os.path.dirname(current_dir), "results", args.exp_name)
+
+    if not os.path.exists(checkpoint_dir):
+        raise ValueError("Checkpoint not found")
+    
+    checkpoint = torch.load(os.path.join(checkpoint_dir, "checkpoint"))
+
+    model, optimizer, criterion_aspects = get_model(args, lang)
+
+    model.load_state_dict(checkpoint['model'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
 
     return model, optimizer, criterion_aspects

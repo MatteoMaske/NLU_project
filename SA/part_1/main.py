@@ -6,7 +6,7 @@ from functions import *
 import os
 import torch
 from tqdm import tqdm
-from utils import get_loaders, save_model, plot_stats
+from utils import get_loaders, save_model, plot_stats, save_params
 import numpy as np
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -27,12 +27,22 @@ def parse_args():
     parser.add_argument('--patience', type=int, default=3, help='Patience')
     parser.add_argument('--runs', type=int, default=1, help='Runs')
     parser.add_argument('--clip', type=float, default=5, help='Clip')
-    parser.add_argument('--exp_name', type=str, default='exp3_1', help='Experiment name')
+    parser.add_argument('--exp_name', type=str, default='exp3_2', help='Experiment name')
+    parser.add_argument('--joint_training', type=bool, default=False, help='Joint training')
+    parser.add_argument('--mode', type=str, default='train', help='Mode')
 
     return parser.parse_args()
 
-
 def main(args):
+    if args.mode == 'train':
+        train(args)
+    elif args.mode == 'test':
+        test(args)
+    else:
+        raise ValueError("Invalid mode")
+
+
+def train(args):
 
     n_epochs = args.epochs
     runs = args.runs
@@ -78,7 +88,17 @@ def main(args):
     print('Aspect F1', round(aspect_f1s.mean(),3), '+-', round(aspect_f1s.std(),3))
 
     save_model(model, optimizer, lang, args.exp_name)
+    save_params(args, args.exp_name)
     plot_stats(sampled_epochs, losses_train, losses_dev, args.exp_name)
+
+def test(args):
+    _, _, test_loader, lang = get_loaders(args.batch_size)
+    model, _, criterion_aspects = get_checkpoint(args, lang)
+    results_test, _ = eval_loop(test_loader, criterion_aspects, model, lang)
+    print("Results on test set")
+    print("F1", results_test[2])
+    print("Precision", results_test[0])
+    print("Recall", results_test[1])
 
 
 if __name__ == "__main__":

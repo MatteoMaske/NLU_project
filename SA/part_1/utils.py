@@ -251,7 +251,7 @@ def save_model(model, optimizer, lang, exp_name):
     saving_object = {"model": model.state_dict(),
                     "optimizer": optimizer.state_dict(),
                     "w2id": "BertTokenizer",
-                    "slot2id": lang.aspect2id}
+                    "aspect2id": lang.aspect2id}
     torch.save(saving_object, path)
     print("Saving model in", path)
 
@@ -270,3 +270,18 @@ def plot_stats(sampled_epochs, losses_train, losses_dev, exp_name):
     plt.savefig(os.path.join(path, 'losses.png'))
 
     plt.show()
+
+def save_params(args, exp_name):
+    os.makedirs(os.path.join('SA/results', exp_name), exist_ok=True)
+    
+    params = {
+        'dropout': args.dropout,
+        'lr': args.lr,
+        'epochs': args.epochs,
+        'batch_size': args.batch_size,
+        'joint_training': args.joint_training,
+    }
+    with open(os.path.join('SA/results', exp_name, 'params.txt'), 'w') as f:
+        pprint(params, f)
+
+        
