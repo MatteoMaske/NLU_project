@@ -64,7 +64,7 @@ def train(args):
         for ep in pbar:
             loss = train_loop(train_loader, optimizer, criterion_aspects, model)
             pbar.set_description(f"Train loss {np.asarray(loss).mean()}")
-            if ep % 5 == 0:
+            if ep % 3 == 0:
                 sampled_epochs.append(ep)
                 losses_train.append(np.asarray(loss).mean())
                 results_dev, loss_dev = eval_loop(dev_loader, criterion_aspects, model, lang)

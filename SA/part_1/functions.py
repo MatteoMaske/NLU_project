@@ -31,8 +31,8 @@ def eval_loop(data, criterion_aspects, model, lang):
     with torch.no_grad(): # It used to avoid the creation of computational graph
         for sample in data:
             aspects = model(sample['utterances'], sample['att_mask'])
-            loss_slot = criterion_aspects(aspects, sample['y_aspects'])
-            loss_array.append(loss_slot.item())
+            loss_aspect = criterion_aspects(aspects, sample['y_aspects'])
+            loss_array.append(loss_aspect.item())
 
             # Slot inference
             output_aspects = torch.argmax(aspects, dim=1)
@@ -93,6 +93,8 @@ def evaluate(ref_aspects, pred_aspects):
         n_tp_aspects += n_hit
         n_gt_aspects += sum([1 for a in gt_aspects if a[1] != 'O'])
         n_pred_aspects += sum([1 for a in p_aspects if a[1] != 'O'])
+    print(ref_aspects[:5])
+    print(pred_aspects[:5])
     # add 0.001 for smoothing
     # calculate precision, recall and f1 for ote task
     precision = float(n_tp_aspects) / float(n_pred_aspects + 1e-3)
