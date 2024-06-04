@@ -140,12 +140,13 @@ def get_model(args, lang):
 def get_checkpoint(args, lang):
     import os
 
-    checkpoint_dir = os.path.join("bin", args.exp_name)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_dir = os.path.join(current_dir, "bin", args.exp_name)
 
     if not os.path.exists(checkpoint_dir):
         raise ValueError("Checkpoint not found")
     
-    checkpoint = torch.load(os.path.join(checkpoint_dir, "checkpoint"))
+    checkpoint = torch.load(os.path.join(checkpoint_dir, "checkpoint"), map_location=args.device)
 
     if args.exp_name == "exp3_1":
         args.joint_training = True
