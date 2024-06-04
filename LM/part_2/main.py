@@ -37,14 +37,33 @@ def parse_args():
     parser.add_argument("--optimizer", type=str, default='sgd')
     parser.add_argument("--NT_ASGD", type=bool, default=True)
     parser.add_argument("--trigger", type=int, default=3)
+    parser.add_argument("--exp_name", type=str, default='exp2_2')
+    parser.add_argument("--mode", type=str, default='test')
 
     return parser.parse_args()
 
-
 def main():
-
-    # Parse the arguments
     args = parse_args()
+    if args.mode == 'train':
+        train(args)
+    elif args.mode == 'test':
+        test(args)
+    else:
+        raise ValueError("Invalid mode")
+    
+def test(args):
+    _,_, test_dataset, lang = preprocess_data()
+    test_loader = DataLoader(test_dataset, batch_size=1024, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]))
+
+    # Load the model
+    model, criterion_eval = get_checkpoint(args, lang)
+    
+    final_ppl,  _ = eval_loop(test_loader, criterion_eval, model)
+    print('Test ppl: ', final_ppl)
+
+
+def train(args):
+
     clip = args.clip
     device = 'cuda'
 

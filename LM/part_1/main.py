@@ -31,14 +31,29 @@ def parse_args():
     parser.add_argument("--patience", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--optimizer", type=str, default='adamw')
+    parser.add_argument("--exp_name", type=str, default='exp1_0')
+    parser.add_argument("--mode", type=str, default='train')
 
     return parser.parse_args()
 
+def main(args):
+    if args.mode == 'train':
+        train(args)
+    else:
+        test(args)
 
-def main():
+def test(args):
+    _,_, test_dataset, lang = preprocess_data()
+    test_loader = DataLoader(test_dataset, batch_size=1024, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]))
+    model, criterion_eval = get_checkpoint(args, lang)
+    final_ppl,  _ = eval_loop(test_loader, criterion_eval, model)
+    print('Test ppl: ', final_ppl)
+
+
+def train(args):
 
     # Parse the arguments
-    args = parse_args()
+    
     clip = args.clip
     device = 'cuda'
 
@@ -98,4 +113,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args)

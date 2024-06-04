@@ -77,3 +77,24 @@ def create_model(args, device, lang):
     print(model)
 
     return model, optimizer, scheduler, criterion_train, criterion_eval
+
+def get_checkpoint(args, lang):
+
+    import os
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_dir = os.path.join(os.path.dirname(current_dir), "bin", args.exp_name)
+    
+    vocab_len = len(lang.word2id)
+
+    checkpoint = torch.load(os.path.join(checkpoint_dir,"best_model.pt"))
+    if args.exp_name == "exp2_2":
+        model = LM_LSTM(600, 600, vocab_len, pad_index=lang.word2id["<pad>"], weight_tying=True).to(args.device)
+    else:
+        model = LM_LSTM(400, 400, vocab_len, pad_index=lang.word2id["<pad>"], weight_tying=True).to(args.device)
+
+    model.load_state_dict(checkpoint)
+
+    criterion_eval = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"], reduction='sum')
+
+    return model, criterion_eval

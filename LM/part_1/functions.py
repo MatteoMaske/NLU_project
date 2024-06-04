@@ -4,7 +4,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from model import LM_LSTM, RNN_cell
+from model import LM_LSTM, LM_RNN
 
 def train_loop(data, optimizer, criterion, model, clip=5):
     model.train()
@@ -75,3 +75,23 @@ def create_model(emb_size, hid_size, lr, clip, device, emb_dropout, out_dropout,
     print(model)
 
     return model, optimizer, criterion_train, criterion_eval
+
+def get_checkpoint(args, lang):
+
+    import os
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_dir = os.path.join(os.path.dirname(current_dir), "bin", args.exp_name)
+    
+    vocab_len = len(lang.word2id)
+
+    checkpoint = torch.load(os.path.join(checkpoint_dir, "best_model.pt"))
+    if args.exp_name == "exp1_0":
+        model = LM_RNN(300, 300, vocab_len, pad_index=lang.word2id["<pad>"]).to(args.device)
+    else:
+        model = LM_LSTM(300, 300, vocab_len, pad_index=lang.word2id["<pad>"]).to(args.device)
+    model.load_state_dict(checkpoint)
+
+    criterion_eval = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"], reduction='sum')
+
+    return model, criterion_eval
