@@ -80,11 +80,12 @@ def get_checkpoint(args, lang):
 
     import os
 
-    checkpoint_dir = os.path.join("bin", args.exp_name)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_dir = os.path.join(current_dir,"bin", args.exp_name)
     
     vocab_len = len(lang.word2id)
 
-    checkpoint = torch.load(os.path.join(checkpoint_dir, "best_model.pt"))
+    checkpoint = torch.load(os.path.join(checkpoint_dir, "best_model.pt"), map_location=args.device)
     if args.exp_name == "exp1_0":
         model = LM_RNN(300, 300, vocab_len, pad_index=lang.word2id["<pad>"]).to(args.device)
     else:

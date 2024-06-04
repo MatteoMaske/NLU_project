@@ -110,17 +110,21 @@ def collate_fn(data, pad_token):
     source, _ = merge(new_item["source"])
     target, lengths = merge(new_item["target"])
 
-    DEVICE = 'cuda'
+    DEVICE = "cuda" if torch.cuda.is_available() else 'cpu'
     new_item["source"] = source.to(DEVICE)
     new_item["target"] = target.to(DEVICE)
     new_item["number_tokens"] = sum(lengths)
     return new_item
 
 def preprocess_data():
+    import os
 
-    train_raw = read_file("../dataset/PennTreeBank/ptb.train.txt")
-    dev_raw = read_file("../dataset/PennTreeBank/ptb.valid.txt")
-    test_raw = read_file("../dataset/PennTreeBank/ptb.test.txt")
+    abs_path = os.path.abspath(os.path.dirname(__file__))
+    dataset_dir = os.path.join(os.path.dirname(abs_path), "dataset")
+
+    train_raw = read_file(os.path.join(dataset_dir, "PennTreeBank/ptb.train.txt"))
+    dev_raw = read_file(os.path.join(dataset_dir, "PennTreeBank/ptb.valid.txt"))
+    test_raw = read_file(os.path.join(dataset_dir, "PennTreeBank/ptb.test.txt"))
 
     lang = Lang(train_raw, ["<pad>", "<eos>"])
 

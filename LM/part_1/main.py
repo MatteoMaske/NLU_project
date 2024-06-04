@@ -31,8 +31,8 @@ def parse_args():
     parser.add_argument("--patience", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--optimizer", type=str, default='adamw')
-    parser.add_argument("--exp_name", type=str, default='exp1_0')
-    parser.add_argument("--mode", type=str, default='train')
+    parser.add_argument("--exp_name", type=str, default='exp1_3')
+    parser.add_argument("--mode", type=str, default='test')
 
     return parser.parse_args()
 

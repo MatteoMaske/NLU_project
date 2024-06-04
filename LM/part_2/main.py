@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument("--optimizer", type=str, default='sgd')
     parser.add_argument("--NT_ASGD", type=bool, default=True)
     parser.add_argument("--trigger", type=int, default=3)
-    parser.add_argument("--exp_name", type=str, default='exp2_2')
+    parser.add_argument("--exp_name", type=str, default='exp2_0')
     parser.add_argument("--mode", type=str, default='test')
 
     return parser.parse_args()
