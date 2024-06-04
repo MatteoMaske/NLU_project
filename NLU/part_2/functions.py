@@ -137,8 +137,11 @@ def get_model(args, lang):
 
 def get_checkpoint(args, lang):
     import os
-    checkpoint_dir = os.path.join("bin", args.exp_name)
-    checkpoint = torch.load(os.path.join(checkpoint_dir,"checkpoint"))
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_dir = os.path.join(current_dir, "bin", args.exp_name)
+    
+    checkpoint = torch.load(os.path.join(checkpoint_dir,"checkpoint"), map_location=args.device)
     lang.slot2id = checkpoint['slot2id']
     lang.intent2id = checkpoint['intent2id']
 
