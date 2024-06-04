@@ -138,8 +138,11 @@ class IntentsAndSlots (data.Dataset):
     
 def prepare_dataset():
 
-    tmp_train_raw = load_data(os.path.join('../dataset','ATIS','train.json'))
-    test_raw = load_data(os.path.join('../dataset','ATIS','test.json'))
+    abs_path = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+    dataset_dir = os.path.join(abs_path, 'dataset')
+
+    tmp_train_raw = load_data(os.path.join(dataset_dir,'ATIS','train.json'))
+    test_raw = load_data(os.path.join(dataset_dir,'ATIS','test.json'))
     # print('Train samples:', len(tmp_train_raw))
     # print('Test samples:', len(test_raw))
 
