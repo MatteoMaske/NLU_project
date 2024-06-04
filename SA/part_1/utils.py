@@ -244,9 +244,9 @@ def collate_fn(data):
     return new_item
 
 def save_model(model, optimizer, lang, exp_name):
-    os.makedirs(os.path.join('SA/results', exp_name), exist_ok=True)
+    os.makedirs(os.path.join('bin', exp_name), exist_ok=True)
 
-    path = os.path.join('SA/results', exp_name, 'checkpoint')
+    path = os.path.join('bin', exp_name, 'checkpoint')
 
     saving_object = {"model": model.state_dict(),
                     "optimizer": optimizer.state_dict(),
@@ -257,7 +257,7 @@ def save_model(model, optimizer, lang, exp_name):
 
 def plot_stats(sampled_epochs, losses_train, losses_dev, exp_name):
     import matplotlib.pyplot as plt
-    path=os.path.join('SA/results', exp_name)
+    path=os.path.join('bin', exp_name)
     plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
 
     plt.title('Train and Dev Losses')
@@ -272,7 +272,6 @@ def plot_stats(sampled_epochs, losses_train, losses_dev, exp_name):
     plt.show()
 
 def save_params(args, exp_name):
-    os.makedirs(os.path.join('SA/results', exp_name), exist_ok=True)
     
     params = {
         'dropout': args.dropout,
@@ -281,7 +280,7 @@ def save_params(args, exp_name):
         'batch_size': args.batch_size,
         'joint_training': args.joint_training,
     }
-    with open(os.path.join('SA/results', exp_name, 'params.txt'), 'w') as f:
+    with open(os.path.join('bin', exp_name, 'params.txt'), 'w') as f:
         pprint(params, f)
 
         

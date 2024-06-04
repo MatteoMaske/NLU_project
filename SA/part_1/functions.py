@@ -93,8 +93,8 @@ def evaluate(ref_aspects, pred_aspects):
         n_tp_aspects += n_hit
         n_gt_aspects += sum([1 for a in gt_aspects if a[1] != 'O'])
         n_pred_aspects += sum([1 for a in p_aspects if a[1] != 'O'])
-    print(ref_aspects[:5])
-    print(pred_aspects[:5])
+    # print(ref_aspects[:5])
+    # print(pred_aspects[:5])
     # add 0.001 for smoothing
     # calculate precision, recall and f1 for ote task
     precision = float(n_tp_aspects) / float(n_pred_aspects + 1e-3)
@@ -126,10 +126,12 @@ def get_model(args, lang):
     # print(model)
 
     if args.joint_training:
-        optimizer = optim.Adam(model.parameters(), lr=lr)
+        param_group = model.parameters()
+        print("Joint training")
     else:
         param_group = [p for n,p in model.named_parameters() if "aspect" in n]
-        optimizer = optim.Adam(param_group, lr=lr)
+        
+    optimizer = optim.Adam(param_group, lr=lr)
 
     criterion_aspects = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
 
@@ -138,13 +140,15 @@ def get_model(args, lang):
 def get_checkpoint(args, lang):
     import os
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    checkpoint_dir = os.path.join(os.path.dirname(current_dir), "results", args.exp_name)
+    checkpoint_dir = os.path.join("bin", args.exp_name)
 
     if not os.path.exists(checkpoint_dir):
         raise ValueError("Checkpoint not found")
     
     checkpoint = torch.load(os.path.join(checkpoint_dir, "checkpoint"))
+
+    if args.exp_name == "exp3_1":
+        args.joint_training = True
 
     model, optimizer, criterion_aspects = get_model(args, lang)
 

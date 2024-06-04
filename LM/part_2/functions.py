@@ -82,8 +82,7 @@ def get_checkpoint(args, lang):
 
     import os
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    checkpoint_dir = os.path.join(os.path.dirname(current_dir), "bin", args.exp_name)
+    checkpoint_dir = os.path.join("bin", args.exp_name)
     
     vocab_len = len(lang.word2id)
 

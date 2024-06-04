@@ -166,24 +166,28 @@ class IntentsAndSlots (data.Dataset):
         return utt_tokenized, slots_tokenized
 
     
-def prepare_dataset():
+def prepare_dataset(lang=None):
 
-    tmp_train_raw = load_data(os.path.join('NLU/dataset','ATIS','train.json'))
-    test_raw = load_data(os.path.join('NLU/dataset','ATIS','test.json'))
+    abs_path = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+    dataset_dir = os.path.join(abs_path, 'dataset')
+
+    tmp_train_raw = load_data(os.path.join(dataset_dir,'ATIS','train.json'))
+    test_raw = load_data(os.path.join(dataset_dir,'ATIS','test.json'))
     # print('Train samples:', len(tmp_train_raw))
     # print('Test samples:', len(test_raw))
 
     # pprint(tmp_train_raw[0])
     train_raw, dev_raw = create_split(tmp_train_raw, test_raw)
 
-    words = sum([x['utterance'].split() for x in train_raw], []) # No set() since we want to compute
-                                                                # the cutoff
-    corpus = train_raw + dev_raw + test_raw # We do not want unk labels,
-                                            # however this depends on the research purpose
-    slots = set(sum([line['slots'].split() for line in corpus],[]))
-    intents = set([line['intent'] for line in corpus])
+    if not lang:
+        words = sum([x['utterance'].split() for x in train_raw], []) # No set() since we want to compute
+                                                                    # the cutoff
+        corpus = train_raw + dev_raw + test_raw # We do not want unk labels,
+                                                # however this depends on the research purpose
+        slots = set(sum([line['slots'].split() for line in corpus],[]))
+        intents = set([line['intent'] for line in corpus])
 
-    lang = Lang(words, intents, slots, cutoff=0)
+        lang = Lang(words, intents, slots, cutoff=0)
 
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
@@ -194,8 +198,8 @@ def prepare_dataset():
 
     return train_dataset, dev_dataset, test_dataset, lang
 
-def get_loaders(batch_size=128):
-    train_dataset, dev_dataset, test_dataset, lang = prepare_dataset()
+def get_loaders(batch_size=128, lang=None):
+    train_dataset, dev_dataset, test_dataset, lang = prepare_dataset(lang)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, collate_fn=collate_fn,  shuffle=True)
     dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
@@ -248,9 +252,9 @@ def collate_fn(data):
     return new_item
 
 def save_model(model, optimizer, lang, exp_name):
-    os.makedirs(os.path.join('NLU/results', exp_name), exist_ok=True)
+    os.makedirs(os.path.join('bin', exp_name), exist_ok=True)
 
-    path = os.path.join('NLU/results', exp_name, 'checkpoint')
+    path = os.path.join('bin', exp_name, 'checkpoint')
 
     saving_object = {"model": model.state_dict(),
                     "optimizer": optimizer.state_dict(),
@@ -260,9 +264,9 @@ def save_model(model, optimizer, lang, exp_name):
     torch.save(saving_object, path)
     print("Saving model in", path)
 
-def plot_stats(losses_train, losses_dev, sampled_epochs, exp_name):
+def plot_stats(sampled_epochs, losses_train, losses_dev, exp_name):
     import matplotlib.pyplot as plt
-    path=os.path.join('NLU/results', exp_name)
+    path=os.path.join('bin', exp_name)
     plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
 
     plt.title('Train and Dev Losses')
@@ -275,3 +279,10 @@ def plot_stats(losses_train, losses_dev, sampled_epochs, exp_name):
     plt.savefig(os.path.join(path, 'losses.png'))
 
     plt.show()
+
+def save_params(args):
+    path = os.path.join('bin', args.exp_name, 'params.txt')
+    with open(path, 'w') as f:
+        for k, v in vars(args).items():
+            f.write(k + ": " + str(v) + "\n")
+    print("Saving parameters in", path)

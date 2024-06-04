@@ -150,9 +150,9 @@ def train(args):
     final_ppl,  _ = eval_loop(test_loader, criterion_eval, best_model)
     print('Test ppl: ', final_ppl)
     # Save the model
-    save_model(best_model)
-    plot_losses(losses_train, losses_dev, sampled_epochs, save=True)
-    plot_ppl(ppl_dev_list, sampled_epochs, save=True)
+    save_model(best_model, args.exp_name)
+    plot_losses(losses_train, losses_dev, sampled_epochs, args.exp_name, save=True)
+    plot_ppl(ppl_dev_list, sampled_epochs, args.exp_name, save=True)
     save_params(args)
 
 

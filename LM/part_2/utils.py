@@ -137,28 +137,17 @@ def sum_weights(model, weight_sum):
         weight_sum[parameter] += parameter.data
     return weight_sum
 
-def save_model(model):
-    # To save the model
-    path = '../results/best_model.pt'
+def save_model(model, exp_name):
+    import os
+
+    os.makedirs(os.path.join('bin', exp_name), exist_ok=True)
+
+    path = os.path.join('bin', exp_name, 'best_model.pt')
+
     torch.save(model.state_dict(), path)
+    print("Saving model in", path)
 
-def restore_model(model,args):
-    # To restore the model
-    path = "results/file.pt"
-    model = LM_LSTM(args.emb_size, args.hid_size, vocab_len, pad_index=lang.word2id["<pad>"],out_dropout=args.out_dropout, emb_dropout=args.emb_dropout, weight_tying=args.weight_tying, dropout_type=args.dropout_type).to(device)
-    # Then you load it
-    checkpoint = torch.load(path)
-    print(checkpoint)
-    model.load_state_dict(checkpoint)
-
-    return model
-
-def plot_losses(losses_train, losses_dev, sampled_epochs, save=False):
-    # Assuming losses_train, losses_dev and sampled_epochs defined
-    # some exaples:
-    # sampled_epochs = [1, 2, 3, 4, 5]
-    # losses_train = [0.8, 0.6, 0.4, 0.3, 0.2]
-    # losses_dev = [0.9, 0.7, 0.5, 0.4, 0.35]
+def plot_losses(losses_train, losses_dev, sampled_epochs, exp_name, save=False):
 
     plt.figure(figsize=(10, 6))
     plt.plot(sampled_epochs, losses_train, label='Training Loss', marker='o')  # train data
@@ -172,10 +161,10 @@ def plot_losses(losses_train, losses_dev, sampled_epochs, save=False):
     plt.grid(True)
     plt.tight_layout()  # Adegua automaticamente i sottografi
 
-    if save: plt.savefig("../results/losses.png")
+    if save: plt.savefig(f"bin/{exp_name}/losses.png")
     plt.show()  # Mostra il grafico
 
-def plot_ppl(ppl_dev_list, sampled_epochs, save=False):
+def plot_ppl(ppl_dev_list, sampled_epochs, exp_name, save=False):
     # Assuming ppl_dev_list and sampled_epochs defined
     # some exaples:
     # sampled_epochs = [1, 2, 3, 4, 5]
@@ -192,10 +181,10 @@ def plot_ppl(ppl_dev_list, sampled_epochs, save=False):
     plt.grid(True)
     plt.tight_layout()  # Adegua automaticamente i sottografi
 
-    if save: plt.savefig("../results/ppl.png")
+    if save: plt.savefig(f"bin/{exp_name}/ppl.png")
     plt.show()  # Mostra il grafico
 
 def save_params(args):
-    with open("../results/params.txt", "w") as f:
+    with open(f"bin/{args.exp_name}/params.txt", "w") as f:
         for k, v in vars(args).items():
             f.write(k + ": " + str(v) + "\n")

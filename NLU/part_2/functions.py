@@ -123,10 +123,37 @@ def get_model(args, lang):
     model.apply(init_weights)
     print(model)
 
-    param_group = [p for n,p in model.named_parameters() if ("slot" in n or "intent" in n)]
+    if args.joint_train:
+        param_group = model.parameters()
+        print("Joint training")
+    else:
+        param_group = [p for n,p in model.named_parameters() if ("slot" in n or "intent" in n)]
     optimizer = optim.Adam(param_group, lr=lr)
 
     criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
     criterion_intents = nn.CrossEntropyLoss() # Because we do not have the pad token
 
     return model, optimizer, criterion_slots, criterion_intents
+
+def get_checkpoint(args, lang):
+    import os
+    checkpoint_dir = os.path.join("bin", args.exp_name)
+    checkpoint = torch.load(os.path.join(checkpoint_dir,"checkpoint"))
+    lang.slot2id = checkpoint['slot2id']
+    lang.intent2id = checkpoint['intent2id']
+
+    lang.id2slot = {v:k for k, v in lang.slot2id.items()}
+    lang.id2intent = {v:k for k, v in lang.intent2id.items()}
+
+    out_slot, out_int = len(lang.slot2id), len(lang.intent2id)
+    dropout=0.1
+    
+    config = BertConfig(hidden_dropout_prob=dropout)
+    model = Bert.from_pretrained("bert-base-uncased", config=config, out_int=out_int, out_slot=out_slot, dropout=dropout).to(args.device)
+
+    model.load_state_dict(checkpoint['model'])
+
+    criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
+    criterion_intents = nn.CrossEntropyLoss() # Because we do not have the pad token
+
+    return model, criterion_slots, criterion_intents, lang

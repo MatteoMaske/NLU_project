@@ -3,7 +3,7 @@
 
 # Import everything from functions.py file
 from functions import *
-from utils import collate_fn, preprocess_data
+from utils import collate_fn, preprocess_data, save_model
 
 from functools import partial
 from torch.utils.data import DataLoader
@@ -110,6 +110,7 @@ def train(args):
     best_model.to(device)
     final_ppl,  _ = eval_loop(test_loader, criterion_eval, best_model)
     print('Test ppl: ', final_ppl)
+    save_model(best_model, args.exp_name)
 
 
 if __name__ == "__main__":

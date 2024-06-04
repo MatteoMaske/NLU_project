@@ -129,3 +129,13 @@ def preprocess_data():
     test_dataset = PennTreeBank(test_raw, lang)
 
     return train_dataset, dev_dataset, test_dataset, lang
+
+def save_model(model, exp_name):
+    import os
+
+    os.makedirs(os.path.join('bin', exp_name), exist_ok=True)
+
+    path = os.path.join('bin', exp_name, 'best_model.pt')
+
+    torch.save(model.state_dict(), path)
+    print("Saving model in", path)

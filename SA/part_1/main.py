@@ -27,9 +27,9 @@ def parse_args():
     parser.add_argument('--patience', type=int, default=3, help='Patience')
     parser.add_argument('--runs', type=int, default=1, help='Runs')
     parser.add_argument('--clip', type=float, default=5, help='Clip')
-    parser.add_argument('--exp_name', type=str, default='exp3_2', help='Experiment name')
+    parser.add_argument('--exp_name', type=str, default='exp3_0', help='Experiment name')
     parser.add_argument('--joint_training', type=bool, default=False, help='Joint training')
-    parser.add_argument('--mode', type=str, default='train', help='Mode')
+    parser.add_argument('--mode', type=str, default='test', help='Mode')
 
     return parser.parse_args()
 
