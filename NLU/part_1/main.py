@@ -7,10 +7,10 @@ import os
 import torch
 from tqdm import tqdm
 from model import ModelIAS
-from utils import get_loaders
+from utils import get_loaders, Lang
 import numpy as np
 
-device = 'cuda:0'
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1" # Used to report errors on CUDA side
 PAD_TOKEN = 0
 
@@ -30,11 +30,30 @@ def parse_args():
     parser.add_argument('--patience', type=int, default=3, help='Patience')
     parser.add_argument('--runs', type=int, default=1, help='Runs')
     parser.add_argument('--clip', type=float, default=5, help='Clip')
+    parser.add_argument('--mode', type=str, default="test", help='Mode')
+    parser.add_argument('--exp_name', type=str, default='exp1', help='Experiment name')
 
     return parser.parse_args()
 
-
 def main(args):
+    if args.mode == "train":
+        train(args)
+    else:
+        test(args)
+
+def test(args):
+    lang = Lang([],[],[])
+    model, criterion_slots, criterion_intents, lang = get_checkpoint(args, lang)
+
+    _, _, test_loader, lang = get_loaders(args.batch_size, lang)
+
+    results_test, intent_test, _ = eval_loop(test_loader, criterion_slots,
+                                            criterion_intents, model, lang)
+    print("Intent Acc", intent_test['accuracy'])
+    print("Slot F1", results_test['total']['f'])
+
+
+def train(args):
 
     n_epochs = args.epochs
     runs = args.runs

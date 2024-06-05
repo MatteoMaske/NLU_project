@@ -120,3 +120,34 @@ def get_model(args, lang):
     criterion_intents = nn.CrossEntropyLoss() # Because we do not have the pad token
 
     return model, optimizer, criterion_slots, criterion_intents
+
+def get_checkpoint(args, lang):
+    import os
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_dir = os.path.join(current_dir, "bin", args.exp_name)
+    
+    checkpoint = torch.load(os.path.join(checkpoint_dir,"checkpoint"), map_location=args.device)
+    lang.slot2id = checkpoint['slot2id']
+    lang.intent2id = checkpoint['intent2id']
+
+    lang.id2slot = {v:k for k, v in lang.slot2id.items()}
+    lang.id2intent = {v:k for k, v in lang.intent2id.items()}
+
+    hid_size = args.hid_size
+    emb_size = args.emb_size
+    out_slot = len(lang.slot2id)
+    out_int = len(lang.intent2id)
+    vocab_len = len(lang.word2id)
+
+    dropout=args.dropout
+    bidir=args.bidir
+    concat=args.concat
+
+    model = ModelIAS(hid_size, out_slot, out_int, emb_size, dropout, bidir, concat, vocab_len, pad_index=PAD_TOKEN).to(args.device)
+    model.load_state_dict(checkpoint['model'])
+
+    criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
+    criterion_intents = nn.CrossEntropyLoss() # Because we do not have the pad token
+
+    return model, criterion_slots, criterion_intents, lang

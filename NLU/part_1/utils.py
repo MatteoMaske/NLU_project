@@ -136,7 +136,7 @@ class IntentsAndSlots (data.Dataset):
         return res
 
     
-def prepare_dataset():
+def prepare_dataset(lang=None):
 
     abs_path = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
     dataset_dir = os.path.join(abs_path, 'dataset')
@@ -149,14 +149,15 @@ def prepare_dataset():
     # pprint(tmp_train_raw[0])
     train_raw, dev_raw = create_split(tmp_train_raw, test_raw)
 
-    words = sum([x['utterance'].split() for x in train_raw], []) # No set() since we want to compute
-                                                                # the cutoff
-    corpus = train_raw + dev_raw + test_raw # We do not want unk labels,
-                                            # however this depends on the research purpose
-    slots = set(sum([line['slots'].split() for line in corpus],[]))
-    intents = set([line['intent'] for line in corpus])
+    if not lang:
+        words = sum([x['utterance'].split() for x in train_raw], []) # No set() since we want to compute
+                                                                    # the cutoff
+        corpus = train_raw + dev_raw + test_raw # We do not want unk labels,
+                                                # however this depends on the research purpose
+        slots = set(sum([line['slots'].split() for line in corpus],[]))
+        intents = set([line['intent'] for line in corpus])
 
-    lang = Lang(words, intents, slots, cutoff=0)
+        lang = Lang(words, intents, slots, cutoff=0)
 
     # Create our datasets
     train_dataset = IntentsAndSlots(train_raw, lang)
@@ -165,8 +166,8 @@ def prepare_dataset():
 
     return train_dataset, dev_dataset, test_dataset, lang
 
-def get_loaders(batch_size=128):
-    train_dataset, dev_dataset, test_dataset, lang = prepare_dataset()
+def get_loaders(batch_size=128, lang=None):
+    train_dataset, dev_dataset, test_dataset, lang = prepare_dataset(lang)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, collate_fn=collate_fn,  shuffle=True)
     dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
