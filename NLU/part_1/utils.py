@@ -216,3 +216,43 @@ def collate_fn(data):
     new_item["y_slots"] = y_slots
     new_item["slots_len"] = y_lengths
     return new_item
+
+def save_model(model, optimizer, lang, exp_name):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(os.path.join(current_dir,'bin', exp_name), exist_ok=True)
+
+    path = os.path.join(current_dir, 'bin', exp_name, 'checkpoint')
+
+    saving_object = {"model": model.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "w2id": lang.word2id,
+                    "slot2id": lang.slot2id,
+                    "intent2id": lang.intent2id}
+    torch.save(saving_object, path)
+    print("Saving model in", path)
+
+def plot_stats(sampled_epochs, losses_train, losses_dev, exp_name):
+    import matplotlib.pyplot as plt
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    path=os.path.join(current_dir,'bin', exp_name)
+    plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
+
+    plt.title('Train and Dev Losses')
+    plt.ylabel('Loss')
+    plt.xlabel('Epochs')
+    plt.plot(sampled_epochs, losses_train, label='Train loss')
+    plt.plot(sampled_epochs, losses_dev, label='Dev loss')
+    plt.legend()
+
+    plt.savefig(os.path.join(path, 'losses.png'))
+
+    plt.show()
+
+def save_params(args):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(current_dir, 'bin', args.exp_name, 'params.txt')
+    with open(path, 'w') as f:
+        for k, v in vars(args).items():
+            f.write(k + ": " + str(v) + "\n")
+    print("Saving parameters in", path)

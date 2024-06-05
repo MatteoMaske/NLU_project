@@ -128,9 +128,11 @@ def get_checkpoint(args, lang):
     checkpoint_dir = os.path.join(current_dir, "bin", args.exp_name)
     
     checkpoint = torch.load(os.path.join(checkpoint_dir,"checkpoint"), map_location=args.device)
+    lang.word2id = checkpoint['w2id']
     lang.slot2id = checkpoint['slot2id']
     lang.intent2id = checkpoint['intent2id']
 
+    lang.id2word = {v:k for k, v in lang.word2id.items()}
     lang.id2slot = {v:k for k, v in lang.slot2id.items()}
     lang.id2intent = {v:k for k, v in lang.intent2id.items()}
 
@@ -143,6 +145,15 @@ def get_checkpoint(args, lang):
     dropout=args.dropout
     bidir=args.bidir
     concat=args.concat
+
+    if args.exp_name == "exp1":
+        bidir=False
+    elif args.exp_name == "exp2":
+        bidir=True
+        concat="concat"
+    elif args.exp_name == "exp3":
+        bidir=True
+        concat="sum"
 
     model = ModelIAS(hid_size, out_slot, out_int, emb_size, dropout, bidir, concat, vocab_len, pad_index=PAD_TOKEN).to(args.device)
     model.load_state_dict(checkpoint['model'])

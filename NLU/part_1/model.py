@@ -16,7 +16,7 @@ class ModelIAS(nn.Module):
         self.utt_encoder = nn.LSTM(emb_size, hid_size, n_layer, bidirectional=bidir, batch_first=True)
         self.slot_out = nn.Linear(2*hid_size, out_slot) if bidir else nn.Linear(hid_size, out_slot)
         self.intent_out = nn.Linear(2*hid_size, out_int) if bidir and concat != "sum" else nn.Linear(hid_size, out_int)
-        # Dropout layer How/Where do we apply it?
+        
         self.dropout = None if dropout is None else nn.Dropout(dropout)
         self.bidir = bidir
         self.concat = concat
