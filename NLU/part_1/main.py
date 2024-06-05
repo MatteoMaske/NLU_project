@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--runs', type=int, default=1, help='Runs')
     parser.add_argument('--clip', type=float, default=5, help='Clip')
     parser.add_argument('--mode', type=str, default="test", help='Mode')
-    parser.add_argument('--exp_name', type=str, default='exp3_new', help='Experiment name')
+    parser.add_argument('--exp_name', type=str, default='exp2', help='Experiment name')
 
     return parser.parse_args()
 

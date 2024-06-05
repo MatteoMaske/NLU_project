@@ -61,11 +61,11 @@ def init_weights(mat):
                 if m.bias != None:
                     m.bias.data.fill_(0.01)
 
-def create_model(args, device, lang):
+def create_model(args, lang):
 
     vocab_len = len(lang.word2id)
     
-    model = LM_LSTM(args.emb_size, args.hid_size, vocab_len, pad_index=lang.word2id["<pad>"],out_dropout=args.out_dropout, emb_dropout=args.emb_dropout, weight_tying=args.weight_tying, dropout_type=args.dropout_type).to(device)
+    model = LM_LSTM(args.emb_size, args.hid_size, vocab_len, pad_index=lang.word2id["<pad>"],out_dropout=args.out_dropout, emb_dropout=args.emb_dropout, weight_tying=args.weight_tying, dropout_type=args.dropout_type).to(args.device)
     model.apply(init_weights)
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr) if args.optimizer == 'sgd' else optim.AdamW(model.parameters(), lr=args.lr)

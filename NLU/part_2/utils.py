@@ -162,7 +162,7 @@ class IntentsAndSlots (data.Dataset):
                 print(slot_tokens)
                 print("------------")
                 discarded+=1
-        print(discarded)
+        # print(discarded)
         return utt_tokenized, slots_tokenized
 
     

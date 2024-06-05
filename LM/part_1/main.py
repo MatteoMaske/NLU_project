@@ -14,6 +14,8 @@ import argparse
 import numpy as np
 import math
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -22,7 +24,7 @@ def parse_args():
     parser.add_argument("--hid_size", type=int, default=300)
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument("--clip", type=int, default=5)
-    parser.add_argument("--device", type=str, default='cuda')
+    parser.add_argument("--device", type=str, default=device)
     parser.add_argument("--emb_dropout", type=float, default=0.5)
     parser.add_argument("--out_dropout", type=float, default=0.2)
     parser.add_argument("--weight_tying", type=bool, default=False)
@@ -31,7 +33,7 @@ def parse_args():
     parser.add_argument("--patience", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--optimizer", type=str, default='adamw')
-    parser.add_argument("--exp_name", type=str, default='exp1_3')
+    parser.add_argument("--exp_name", type=str, default='exp1_2')
     parser.add_argument("--mode", type=str, default='test')
 
     return parser.parse_args()
@@ -64,7 +66,7 @@ def train(args):
     test_loader = DataLoader(test_dataset, batch_size=1024, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]))
 
     # Load the model, the optimizer, and the criterion
-    model, optimizer, criterion_train, criterion_eval = create_model(args.emb_size, args.hid_size, args.lr, args.clip, device, args.emb_dropout, args.out_dropout, args.weight_tying, args.dropout_type, lang, args.optimizer)
+    model, optimizer, criterion_train, criterion_eval = create_model(args.emb_size, args.hid_size, args.lr, args.clip, args.device, args.emb_dropout, args.out_dropout, args.weight_tying, args.dropout_type, lang, args.optimizer)
 
     losses_train = []
     losses_dev = []
@@ -80,21 +82,12 @@ def train(args):
     for epoch in pbar:
         loss = train_loop(train_loader, optimizer, criterion_train, model, clip)
 
-        # if 't0' in optimizer.params_group[0]:
-        #   tmp = {}
-        #   for parameter in model.parameters():
-        #     tmp[parameter] = parameter.data.clone()
-        #     parameter.data = optimizer.state[parameter]['ax'].clone()
-
         if epoch % 1 == 0:
             sampled_epochs.append(epoch)
             losses_train.append(np.asarray(loss).mean())
             ppl_dev, loss_dev = eval_loop(dev_loader, criterion_eval, model)
             ppl_dev_list.append(ppl_dev)
             losses_dev.append(np.asarray(loss_dev).mean())
-
-            # if loss_dev < stored_loss:
-            #   stored_loss = loss_dev
 
             pbar.set_description("PPL: %f" % ppl_dev)
             if  ppl_dev < best_ppl: # the lower, the better

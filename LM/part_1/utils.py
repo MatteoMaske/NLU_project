@@ -137,9 +137,10 @@ def preprocess_data():
 def save_model(model, exp_name):
     import os
 
-    os.makedirs(os.path.join('bin', exp_name), exist_ok=True)
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    os.makedirs(os.path.join(current_dir, 'bin', exp_name), exist_ok=True)
 
-    path = os.path.join('bin', exp_name, 'best_model.pt')
+    path = os.path.join(current_dir, 'bin', exp_name, 'best_model.pt')
 
     torch.save(model.state_dict(), path)
     print("Saving model in", path)

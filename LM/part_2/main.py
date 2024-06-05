@@ -16,6 +16,7 @@ import argparse
 import numpy as np
 import math
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -26,7 +27,7 @@ def parse_args():
     parser.add_argument("--lr_decay", type=float, default=0.75)
     parser.add_argument("--lr_decay_epoch", type=int, default=3)
     parser.add_argument("--clip", type=int, default=5)
-    parser.add_argument("--device", type=str, default='cuda')
+    parser.add_argument("--device", type=str, default=device)
     parser.add_argument("--emb_dropout", type=float, default=0.2)
     parser.add_argument("--out_dropout", type=float, default=0.5)
     parser.add_argument("--weight_tying", type=bool, default=True)
@@ -37,7 +38,7 @@ def parse_args():
     parser.add_argument("--optimizer", type=str, default='sgd')
     parser.add_argument("--NT_ASGD", type=bool, default=True)
     parser.add_argument("--trigger", type=int, default=3)
-    parser.add_argument("--exp_name", type=str, default='exp2_0')
+    parser.add_argument("--exp_name", type=str, default='exp2_2')
     parser.add_argument("--mode", type=str, default='test')
 
     return parser.parse_args()
@@ -65,7 +66,6 @@ def test(args):
 def train(args):
 
     clip = args.clip
-    device = 'cuda'
 
     # Load the data
     train_dataset, dev_dataset, test_dataset, lang = preprocess_data()
@@ -74,7 +74,7 @@ def train(args):
     test_loader = DataLoader(test_dataset, batch_size=1024, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]))
 
     # Load the model, the optimizer, and the criterion
-    model, optimizer, scheduler, criterion_train, criterion_eval = create_model(args, device, lang)
+    model, optimizer, scheduler, criterion_train, criterion_eval = create_model(args, lang)
 
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("N trainable params", trainable_params)
